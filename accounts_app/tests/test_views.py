@@ -136,3 +136,8 @@ class ActivateViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertTrue(self.user.is_active)
+
+
+class LoginViewsTests(APITestCase):
+    def setUp(self):
+        pass

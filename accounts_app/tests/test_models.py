@@ -3,7 +3,7 @@ from accounts_app.models import User
 from django.db import IntegrityError
 
 
-class RegisterModelTests(TestCase):
+class UserModelTests(TestCase):
     def setUp(self):
         self.email = "test@example.com"
         self.password = "Password123!"
