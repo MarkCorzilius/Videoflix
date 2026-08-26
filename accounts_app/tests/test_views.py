@@ -138,6 +138,83 @@ class ActivateViewTests(APITestCase):
         self.assertTrue(self.user.is_active)
 
 
-class LoginViewsTests(APITestCase):
+class LoginViewTests(APITestCase):
     def setUp(self):
-        pass
+        self.email = "test@example.com"
+        self.password = "Password123!"
+        self.user = User.objects.create_user(
+            username=self.email,
+            email=self.email,
+            password=self.password,
+            is_active=True,
+        )
+        self.client = APIClient()
+
+        self.correct_data = {
+            "email": self.email,
+            "password": self.password
+        }
+
+        self.expected_response = {
+            "detail": "Login successful",
+                "user": {
+                    "id": self.user.id,
+                    "username": self.user.username,
+                }
+        }
+
+    def test_success_login(self):
+        response = self.client.post("/api/login/", data=self.correct_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_correct_response(self):
+        response = self.client.post("/api/login/", data=self.correct_data, format="json")
+
+        self.assertEqual(response.data, self.expected_response)
+
+    def test_success_login_created_cookies(self):
+        response = self.client.post("/api/login/", data=self.correct_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.cookies)
+        self.assertIn("refresh", response.cookies)
+
+    def test_login_wrong_email(self):
+        data = self.correct_data.copy()
+        data["email"] = "wrongmail@mail.com"
+        response = self.client.post("/api/login/", data=data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_login_wrong_password(self):
+        data = self.correct_data.copy()
+        data["password"] = "wrongpass"
+        response = self.client.post("/api/login/", data=data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+    def test_login_missing_fields(self):
+        for field in self.correct_data:
+            data = self.correct_data.copy()
+            data.pop(field)
+            response = self.client.post("/api/login/", data=data, format="json")
+
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_login_empty_request(self):
+        response = self.client.post("/api/login/", data={}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unverified_login(self):
+        email="supertest@gmail.com"
+        password="strongPass123!"
+        User.objects.create_user(email=email, password=password, is_active=False)
+        response = self.client.post("/api/login/", data={
+            "email": email,
+            "password": password,
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
