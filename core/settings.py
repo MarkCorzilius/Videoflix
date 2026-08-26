@@ -27,6 +27,7 @@ CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", default="http://lo
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
+AUTH_USER_MODEL = 'accounts_app.User'
 
 # Application definition
 
@@ -40,16 +41,15 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_rq',
-    'debug_toolbar',
     'import_export',
+    'accounts_app',
 ]
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -58,12 +58,35 @@ MIDDLEWARE = [
 ]
 
 
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar"]
+
+if DEBUG:
+    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": "debug_toolbar.middleware.show_toolbar_with_docker",
+    "IS_RUNNING_TESTS": False,
 }
 
 
@@ -72,7 +95,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -159,3 +182,10 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", default="http://127.0.0.1:5500,http://localhost:5500").split(",")
+CORS_ALLOW_CREDENTIALS = True
+
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_URL", default="videoflix@mail.com")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", default="http://localhost:5500")
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from accounts_app.models import User
 from django.db import IntegrityError
 
 

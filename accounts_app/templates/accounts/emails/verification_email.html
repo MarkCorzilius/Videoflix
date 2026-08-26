@@ -1,0 +1,14 @@
+{% load static %}
+
+<div style="text-align:center; font-family:Arial, sans-serif;">
+  <img src="{% static 'accounts/images/logo_icon.svg' %}" width="180" alt="Videoflix">
+  <h2>Dear {{ user.first_name }},</h2>
+  <p>Thank you for registering. Click below to verify your email:</p>
+  <a href="{{ activation_link }}"
+     style="background:#3f2fe0; color:#fff; padding:14px 28px; 
+            border-radius:30px; text-decoration:none; font-weight:bold;">
+     Activate account
+  </a>
+  <p>If you did not create an account, please ignore this email.</p>
+  <p>Best regards,<br>Your Videoflix Team</p>
+</div>

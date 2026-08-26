@@ -1,0 +1,14 @@
+Videoflix
+
+Dear {{ user.first_name }},
+
+Thank you for registering.
+
+Please click the link below to verify your email and activate your account:
+
+{{ activation_link }}
+
+If you did not create an account, please ignore this email.
+
+Best regards,
+Your Videoflix Team
