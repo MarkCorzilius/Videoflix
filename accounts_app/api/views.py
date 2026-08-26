@@ -5,7 +5,7 @@ from accounts_app.api.serializers import RegisterSerializer
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import status
 from rest_framework.response import Response
-from accounts_app.services.email_service import send_verification_email
+from accounts_app.tasks.email_tasks import send_verification_email_task
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
 
@@ -18,7 +18,7 @@ class RegisterView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token = default_token_generator.make_token(user)
-        send_verification_email(user, token)
+        send_verification_email_task.delay(user.id, token)
 
         return Response({
             "user": {
