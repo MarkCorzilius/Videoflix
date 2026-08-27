@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken, TokenError
 
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
@@ -69,8 +70,8 @@ class LoginView(TokenObtainPairView):
 
         try:
             serializer.is_valid(raise_exception=True)
-        except TokenError as e:
-            raise InvalidToken(e.args[0]) from e
+        except AuthenticationFailed:
+            return Response({"Please check your entries and try again."}, status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = serializer.validated_data["refresh"]
         access = serializer.validated_data["access"]
@@ -103,4 +104,5 @@ class CookieRefreshTokenView(TokenRefreshView):
         access = serializer.validated_data["access"]
         response = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
         response.set_cookie("access", access, httponly=True)
+
         return response

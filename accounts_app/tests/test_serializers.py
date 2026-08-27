@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from accounts_app.models import User
 from accounts_app.api.serializers import RegisterSerializer, LoginSerializer
-
+from rest_framework.exceptions import AuthenticationFailed
 
 class RegisterSerializerTests(APITestCase):
     def setUp(self):
@@ -105,15 +105,16 @@ class LoginSerializerTests(APITestCase):
             "password": self.password,
         })
 
-        self.assertFalse(serializer.is_valid())
+        with self.assertRaises(AuthenticationFailed):
+            serializer.is_valid(raise_exception=True)
 
     def test_wrong_password_login(self):
         data = self.correct_data.copy()
         data["password"] = "wrongPassword123!"
         serializer = LoginSerializer(data=data)
 
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("password", serializer.errors)
+        with self.assertRaises(AuthenticationFailed):
+            serializer.is_valid(raise_exception=True)
 
     def test_login_without_password(self):
         data = self.correct_data.copy()
@@ -141,12 +142,10 @@ class LoginSerializerTests(APITestCase):
         }
         serializer = LoginSerializer(data=data)
 
-        self.assertFalse(serializer.is_valid())
+        with self.assertRaises(AuthenticationFailed):
+            serializer.is_valid(raise_exception=True)
 
     def test_login_without_email_and_password(self):
         serializer = LoginSerializer(data={})
 
         self.assertFalse(serializer.is_valid())
-
-# add serializer
-# add jwt

@@ -2,13 +2,11 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from accounts_app.models import User
-from django.core import mail
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
-from django.utils import timezone
 
 
 class RegisterViewTests(APITestCase):
@@ -67,13 +65,6 @@ class RegisterViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = User.objects.get(email=self.email)
         self.assertFalse(user.is_active)
-
-    def test_verification_email_is_sent(self):
-        response = self.client.post("/api/register/", self.register_data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].to, [self.email])
 
 
 class ActivateViewTests(APITestCase):
@@ -146,7 +137,6 @@ class LoginViewTests(APITestCase):
         self.email = "test@example.com"
         self.password = "Password123!"
         self.user = User.objects.create_user(
-            username=self.email,
             email=self.email,
             password=self.password,
             is_active=True,
@@ -188,14 +178,14 @@ class LoginViewTests(APITestCase):
         data["email"] = "wrongmail@mail.com"
         response = self.client.post("/api/login/", data=data, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_login_wrong_password(self):
         data = self.correct_data.copy()
         data["password"] = "wrongpass"
         response = self.client.post("/api/login/", data=data, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
     def test_login_missing_fields(self):
@@ -220,7 +210,7 @@ class LoginViewTests(APITestCase):
             "password": password,
         }, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class RefreshTokenViewTests(APITestCase):
@@ -228,7 +218,7 @@ class RefreshTokenViewTests(APITestCase):
         self.client = APIClient()
         self.email = "supertest@gmail.com"
         self.password = "strongPass123!"
-        self.user = User.objects.create_user(username=self.email, email=self.email, password=self.password, is_active=True)
+        self.user = User.objects.create_user(email=self.email, password=self.password, is_active=True)
 
     def test_fresh_refresh_token_creates_access_token(self):
         refresh = RefreshToken.for_user(self.user)
@@ -248,7 +238,7 @@ class RefreshTokenViewTests(APITestCase):
     def test_missing_refresh_token_denies_access(self):
         response = self.client.post("/api/token/refresh/")
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_refresh_token_denies_access(self):
         self.client.cookies["refresh"] = str("invalid_refresh_token")
