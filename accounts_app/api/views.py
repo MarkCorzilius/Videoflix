@@ -8,10 +8,12 @@ from rest_framework.response import Response
 from accounts_app.tasks.email_tasks import send_verification_email_task
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
 
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -30,6 +32,8 @@ class RegisterView(CreateAPIView):
 
 
 class ActivateView(APIView):
+    permission_classes = [AllowAny]
+    
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()

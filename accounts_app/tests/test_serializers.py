@@ -147,3 +147,6 @@ class LoginSerializerTests(APITestCase):
         serializer = LoginSerializer(data={})
 
         self.assertFalse(serializer.is_valid())
+
+# add serializer
+# add jwt
