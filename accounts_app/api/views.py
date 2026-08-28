@@ -13,6 +13,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken, TokenError
 from accounts_app.throttles import LoginEmailThrottle, RegisterEmailThrottle
 
@@ -107,5 +108,25 @@ class CookieRefreshTokenView(TokenRefreshView):
         access = serializer.validated_data["access"]
         response = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
         response.set_cookie("access", access, httponly=True)
+
+        return response
+
+
+class LogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            refresh = request.COOKIES.get("refresh")
+            token = RefreshToken(refresh)
+            token.blacklist()
+
+        except Exception:
+            pass
+
+        response = Response(status=status.HTTP_200_OK)
+        response.delete_cookie("refresh")
+        response.delete_cookie("access")
+
 
         return response

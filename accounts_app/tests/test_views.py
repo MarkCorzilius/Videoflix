@@ -8,6 +8,7 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
 from django.core.cache import cache
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
 
 class RegisterViewTests(APITestCase):
@@ -319,3 +320,47 @@ class RefreshTokenViewTests(APITestCase):
         response = self.client.post("/api/token/refresh/")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class LogoutViewTests(APITestCase):
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(email="test@gmail.com", password="securetest123!", is_active=True)
+        self.refresh = RefreshToken.for_user(self.user)
+        self.client.cookies["refresh"] = str(self.refresh)
+
+        self.logout_url = "/api/logout/"
+
+    def test_successful_logout(self):
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.cookies["refresh"]["max-age"], 0)
+        self.assertEqual(response.cookies["access"]["max-age"], 0)
+
+    def test_verify_refresh_token_is_blacklisted(self):
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(BlacklistedToken.objects.filter(token__jti=self.refresh["jti"]).exists())
+
+
+    def test_logout_without_refresh_token_cookie(self):
+        self.client.cookies["refresh"] = ""
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(BlacklistedToken.objects.filter(token__jti=self.refresh["jti"]).exists())
+        
+        self.assertEqual(response.cookies["refresh"]["max-age"], 0)
+        self.assertEqual(response.cookies["access"]["max-age"], 0)
+
+    def test_logout_with_invalid_token(self):
+        self.client.cookies["refresh"] = str("invalid-token")
+        response = self.client.post(self.logout_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(BlacklistedToken.objects.filter(token__jti=self.refresh["jti"]).exists())
+        
+        self.assertEqual(response.cookies["refresh"]["max-age"], 0)
+        self.assertEqual(response.cookies["access"]["max-age"], 0)
