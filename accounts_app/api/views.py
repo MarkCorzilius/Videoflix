@@ -14,11 +14,13 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken, TokenError
+from accounts_app.throttles import LoginEmailThrottle, RegisterEmailThrottle
 
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [RegisterEmailThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -38,7 +40,7 @@ class RegisterView(CreateAPIView):
 
 class ActivateView(APIView):
     permission_classes = [AllowAny]
-    
+
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
@@ -64,6 +66,7 @@ class ActivateView(APIView):
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [LoginEmailThrottle]
 
     def post(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)

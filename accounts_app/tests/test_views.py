@@ -7,10 +7,12 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta
+from django.core.cache import cache
 
 
 class RegisterViewTests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
 
         self.email = "test@example.com"
@@ -20,22 +22,62 @@ class RegisterViewTests(APITestCase):
             "password": self.password,
             "confirmed_password": self.password,
         }
+        self.url = "/api/register/"
 
     def test_register_success(self):
-        response = self.client.post("/api/register/", self.register_data, format="json")
+        response = self.client.post(self.url, self.register_data, format="json")
 
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_register_throttle(self):
+        last_user_data = {
+                "email": f"lastuser@example.com",
+                "password": "Password123!",
+                "confirmed_password": "Password123!",
+            }
+        for i in range(10):
+            data = {
+                "email": f"user{i}@example.com",
+                "password": "Password123!",
+                "confirmed_password": "Password123!",
+            }
+            response = self.client.post(self.url, data, format="json", REMOTE_ADDR="192.168.1.1")
+            self.assertNotEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        response = self.client.post(self.url, last_user_data, format="json", REMOTE_ADDR="192.168.1.1")
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_different_ips_have_different_throttle_rates(self):
+        last_user_data = {
+                "email": f"lastuser@example.com",
+                "password": "Password123!",
+                "confirmed_password": "Password123!",
+            }
+        for i in range(10):
+            data = {
+                "email": f"user{i}@example.com",
+                "password": "Password123!",
+                "confirmed_password": "Password123!",
+            }
+            response = self.client.post(self.url, data, format="json", REMOTE_ADDR="192.168.1.1")
+            self.assertNotEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        response = self.client.post(self.url, data, format="json", REMOTE_ADDR="192.168.1.1")
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        response = self.client.post(self.url, last_user_data, format="json", REMOTE_ADDR="192.168.1.2")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_duplicate_email_returns_400(self):
         User.objects.create_user(email=self.email, password=self.password)
-        response = self.client.post("/api/register/", self.register_data, format="json")
+        response = self.client.post(self.url, self.register_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_email_returns_400(self):
         data = self.register_data.copy()
         data["email"] = "invalid_mail"
-        response = self.client.post("/api/register/", data, format="json")
+        response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -43,24 +85,24 @@ class RegisterViewTests(APITestCase):
         data = self.register_data.copy()
         data["confirmed_password"] = "123"
         data["password"] = "123"
-        response = self.client.post("/api/register/", data, format="json")
+        response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_passwords_do_not_match_returns_400(self):
         data = self.register_data.copy()
         data["confirmed_password"] = "AnotherPassword123!"
-        response = self.client.post("/api/register/", data, format="json")
+        response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_required_fields_missing(self):
-        response = self.client.post("/api/register/", {}, format="json")
+        response = self.client.post(self.url, {}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_user_is_unverified_after_registration(self):
-        response = self.client.post("/api/register/", self.register_data, format="json")
+        response = self.client.post(self.url, self.register_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = User.objects.get(email=self.email)
@@ -134,6 +176,7 @@ class ActivateViewTests(APITestCase):
 
 class LoginViewTests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.email = "test@example.com"
         self.password = "Password123!"
         self.user = User.objects.create_user(
@@ -155,19 +198,42 @@ class LoginViewTests(APITestCase):
                     "username": self.user.username,
                 }
         }
+        self.url = "/api/login/"
 
     def test_success_login(self):
-        response = self.client.post("/api/login/", data=self.correct_data, format="json")
+        response = self.client.post(self.url, data=self.correct_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_login_throttle(self):
+        for _ in range(10):
+            response = self.client.post(self.url, self.correct_data, format="json")
+            self.assertNotEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        response = self.client.post(self.url, self.correct_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_different_emails_have_different_throttle_rates(self):
+        for _ in range(10):
+            response = self.client.post(self.url, self.correct_data, format="json")
+            self.assertNotEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        response = self.client.post(self.url, self.correct_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        User.objects.create_user(email="foreign@mail.com", password="securePassword123!", is_active=True)
+        response = self.client.post(self.url, data={
+            "email": "foreign@mail.com",
+            "password": "securePassword123!",
+        }, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_correct_response(self):
-        response = self.client.post("/api/login/", data=self.correct_data, format="json")
+        response = self.client.post(self.url, data=self.correct_data, format="json")
 
         self.assertEqual(response.data, self.expected_response)
 
     def test_success_login_created_cookies(self):
-        response = self.client.post("/api/login/", data=self.correct_data, format="json")
+        response = self.client.post(self.url, data=self.correct_data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("access", response.cookies)
@@ -176,14 +242,14 @@ class LoginViewTests(APITestCase):
     def test_login_wrong_email(self):
         data = self.correct_data.copy()
         data["email"] = "wrongmail@mail.com"
-        response = self.client.post("/api/login/", data=data, format="json")
+        response = self.client.post(self.url, data=data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_login_wrong_password(self):
         data = self.correct_data.copy()
         data["password"] = "wrongpass"
-        response = self.client.post("/api/login/", data=data, format="json")
+        response = self.client.post(self.url, data=data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -192,12 +258,12 @@ class LoginViewTests(APITestCase):
         for field in self.correct_data:
             data = self.correct_data.copy()
             data.pop(field)
-            response = self.client.post("/api/login/", data=data, format="json")
+            response = self.client.post(self.url, data=data, format="json")
 
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_empty_request(self):
-        response = self.client.post("/api/login/", data={}, format="json")
+        response = self.client.post(self.url, data={}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -205,7 +271,7 @@ class LoginViewTests(APITestCase):
         email="supertest@gmail.com"
         password="strongPass123!"
         User.objects.create_user(email=email, password=password, is_active=False)
-        response = self.client.post("/api/login/", data={
+        response = self.client.post(self.url, data={
             "email": email,
             "password": password,
         }, format="json")
