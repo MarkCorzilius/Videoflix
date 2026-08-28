@@ -1,17 +1,27 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from accounts_app.models import User
-from accounts_app.api.serializers import RegisterSerializer
+from accounts_app.api.serializers import RegisterSerializer, LoginSerializer
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import status
 from rest_framework.response import Response
 from accounts_app.tasks.email_tasks import send_verification_email_task
 from django.utils.http import urlsafe_base64_decode
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken, TokenError
+from accounts_app.throttles import LoginEmailThrottle, RegisterEmailThrottle
 
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [RegisterEmailThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -30,6 +40,8 @@ class RegisterView(CreateAPIView):
 
 
 class ActivateView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
@@ -51,3 +63,70 @@ class ActivateView(APIView):
             {"message": "Account successfully activated."},
             status=status.HTTP_200_OK,
         )
+
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [LoginEmailThrottle]
+
+    def post(self, request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except AuthenticationFailed:
+            return Response({"Please check your entries and try again."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        refresh = serializer.validated_data["refresh"]
+        access = serializer.validated_data["access"]
+
+        response = Response({
+            "detail": "Login successful",
+            "user": {
+                "id": serializer.validated_data["id"],
+                "username": serializer.validated_data["username"],
+            }
+        }, status=status.HTTP_200_OK)
+        
+        response.set_cookie("refresh", refresh, httponly=True)
+        response.set_cookie("access", access, httponly=True)
+
+        return response
+
+
+class CookieRefreshTokenView(TokenRefreshView):
+    permission_classes = [AllowAny]
+    def post(self, request, *args, **kwargs) -> Response:
+        refresh = request.COOKIES.get("refresh")
+        serializer = self.get_serializer(data={"refresh": refresh})
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0]) from e
+
+        access = serializer.validated_data["access"]
+        response = Response({"detail": "Token refreshed"}, status=status.HTTP_200_OK)
+        response.set_cookie("access", access, httponly=True)
+
+        return response
+
+
+class LogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            refresh = request.COOKIES.get("refresh")
+            token = RefreshToken(refresh)
+            token.blacklist()
+
+        except Exception:
+            pass
+
+        response = Response(status=status.HTTP_200_OK)
+        response.delete_cookie("refresh")
+        response.delete_cookie("access")
+
+
+        return response

@@ -2,8 +2,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from accounts_app.models import User
-from accounts_app.api.serializers import RegisterSerializer
-
+from accounts_app.api.serializers import RegisterSerializer, LoginSerializer
+from rest_framework.exceptions import AuthenticationFailed
 
 class RegisterSerializerTests(APITestCase):
     def setUp(self):
@@ -29,11 +29,7 @@ class RegisterSerializerTests(APITestCase):
             serializer = RegisterSerializer(data=test_data)
 
             self.assertFalse(serializer.is_valid())
-            self.assertIn(field, serializer.errors)
-
-        self.assertFalse(serializer.is_valid())
-        self.assertIn(field, serializer.errors)
-                
+            self.assertIn(field, serializer.errors)        
 
     def test_invalid_password(self):
         serializer = RegisterSerializer(data={
@@ -86,3 +82,70 @@ class RegisterSerializerTests(APITestCase):
 
         self.assertEqual(serializer.data["email"], self.email)
         self.assertNotIn("password", serializer.data)
+
+
+class LoginSerializerTests(APITestCase):
+    def setUp(self):
+        self.email = "test@example.com"
+        self.password = "Password123!"
+        self.user = User.objects.create_user(email=self.email, password=self.password, is_active=True)
+        self.correct_data = {
+            "email": self.email,
+            "password": self.password,
+        }
+
+    def test_success_login(self):
+        serializer = LoginSerializer(data=self.correct_data)
+
+        self.assertTrue(serializer.is_valid())
+
+    def test_not_registered_user_login(self):
+        serializer = LoginSerializer(data={
+            "email": "notRegisteredUser@gmail.com",
+            "password": self.password,
+        })
+
+        with self.assertRaises(AuthenticationFailed):
+            serializer.is_valid(raise_exception=True)
+
+    def test_wrong_password_login(self):
+        data = self.correct_data.copy()
+        data["password"] = "wrongPassword123!"
+        serializer = LoginSerializer(data=data)
+
+        with self.assertRaises(AuthenticationFailed):
+            serializer.is_valid(raise_exception=True)
+
+    def test_login_without_password(self):
+        data = self.correct_data.copy()
+        data.pop("password")
+        serializer = LoginSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("password", serializer.errors)
+
+    def test_login_without_email(self):
+        data = self.correct_data.copy()
+        data.pop("email")
+        serializer = LoginSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("email", serializer.errors)
+
+    def test_inactive_user_login(self):
+        email = "seconduser@gmail.com"
+        password="strongpassword123!"
+        User.objects.create_user(email=email, password=password, is_active=False)
+        data = {
+            "email": email,
+            "password": password,
+        }
+        serializer = LoginSerializer(data=data)
+
+        with self.assertRaises(AuthenticationFailed):
+            serializer.is_valid(raise_exception=True)
+
+    def test_login_without_email_and_password(self):
+        serializer = LoginSerializer(data={})
+
+        self.assertFalse(serializer.is_valid())

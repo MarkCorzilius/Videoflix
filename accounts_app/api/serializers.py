@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from accounts_app.models import User
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -24,3 +25,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("confirmed_password")
         return User.objects.create_user(**validated_data)
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        data["id"] = self.user.id
+        data["username"] = self.user.username
+        
+        return data
