@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django_rq',
     'import_export',
     'accounts_app',
+    'videos_app',
 ]
 
 MIDDLEWARE = [
