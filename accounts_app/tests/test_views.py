@@ -370,7 +370,7 @@ class PasswordResetRequestViewTests(APITestCase):
     def setUp(self):
         self.valid_email = "valid@gmail.com"
         self.user = User.objects.create_user(email=self.valid_email, password="secureTest123!", is_active=True)
-        self.url = "/api/password-reset/"
+        self.url = "/api/password_reset/"
 
     def test_password_reset_valid_reset_request(self):
         data = { "email": self.valid_email }

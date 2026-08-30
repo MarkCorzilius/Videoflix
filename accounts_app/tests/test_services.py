@@ -1,8 +1,7 @@
 from django.test import TestCase
 from accounts_app.models import User
 from django.core import mail
-from accounts_app.tasks.email_tasks import send_verification_email_task
-from accounts_app.tasks.password_tasks import send_password_reset_task
+from accounts_app.tasks.email_tasks import send_verification_email_task, send_password_reset_task
 from django.contrib.auth.tokens import default_token_generator
 
 class EmailServiceTests(TestCase):

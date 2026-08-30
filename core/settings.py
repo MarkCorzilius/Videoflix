@@ -165,6 +165,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        "NAME": "accounts_app.validators.PasswordStrengthValidator",
+    },
 ]
 
 
@@ -211,3 +214,5 @@ CORS_ALLOW_CREDENTIALS = True
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_URL", default="videoflix@mail.com")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", default="http://localhost:5500")
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24

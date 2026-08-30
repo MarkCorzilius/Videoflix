@@ -169,7 +169,7 @@ class PasswordResetRequestSerializerTests(APITestCase):
 
     def test_missing_email(self):
         data = {}
-        serializer = PasswordResetRequestSerializer(data)
+        serializer = PasswordResetRequestSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
@@ -185,7 +185,7 @@ class PasswordResetConfirmSerializerTests(APITestCase):
             "password": "securePassword123!",
             "confirmed_password": "securePassword123!",
         }
-        serializer = PasswordResetConfirmSerializer(data)
+        serializer = PasswordResetConfirmSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
 
@@ -194,7 +194,7 @@ class PasswordResetConfirmSerializerTests(APITestCase):
             "password": "securePassword123!",
             "confirmed_password": "ANOTHERSecurePassword123!",
         }
-        serializer = PasswordResetConfirmSerializer(data)
+        serializer = PasswordResetConfirmSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("confirmed_password", serializer.errors)
@@ -204,7 +204,7 @@ class PasswordResetConfirmSerializerTests(APITestCase):
             "password": "invalidpass",
             "confirmed_password": "invalidpass",
         }
-        serializer = PasswordResetConfirmSerializer(data)
+        serializer = PasswordResetConfirmSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
@@ -214,7 +214,7 @@ class PasswordResetConfirmSerializerTests(APITestCase):
             "password": "",
             "confirmed_password": "securePassword123!",
         }
-        serializer = PasswordResetConfirmSerializer(data)
+        serializer = PasswordResetConfirmSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
@@ -224,7 +224,7 @@ class PasswordResetConfirmSerializerTests(APITestCase):
             "password": "securePassword123!",
             "confirmed_password": "",
         }
-        serializer = PasswordResetConfirmSerializer(data)
+        serializer = PasswordResetConfirmSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("confirmed_password", serializer.errors)
