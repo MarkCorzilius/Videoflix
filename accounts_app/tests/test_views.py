@@ -364,3 +364,115 @@ class LogoutViewTests(APITestCase):
         
         self.assertEqual(response.cookies["refresh"]["max-age"], 0)
         self.assertEqual(response.cookies["access"]["max-age"], 0)
+
+
+class PasswordResetRequestViewTests(APITestCase):
+    def setUp(self):
+        self.valid_email = "valid@gmail.com"
+        self.user = User.objects.create_user(email=self.valid_email, password="secureTest123!", is_active=True)
+        self.url = "/api/password-reset/"
+
+    def test_password_reset_valid_reset_request(self):
+        data = { "email": self.valid_email }
+        response = self.client.post(self.url, data, format="json")
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_password_reset_invalid_email(self):
+        data = { "email": "invalid-mail" }
+        response = self.client.post(self.url, data, format="json")
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_password_reset_not_registered_email_request(self):
+        data = { "email": "unknown@gmail.com" }
+        response = self.client.post(self.url, data, format="json")
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_password_reset_missing_email(self):
+        response = self.client.post(
+            self.url,
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+class PasswordResetConfirmViewTests(APITestCase):
+    def setUp(self):
+        self.old_password = "oldSecurePassword123!"
+        self.user = User.objects.create_user(email="test@gmail.com", password=self.old_password, is_active=True)
+
+        self.valid_data = {
+            "password": "securePassword123!",
+            "confirmed_password": "securePassword123!",
+        }
+
+    def test_valid_reset_confirmation(self):
+        uidb64 = urlsafe_base64_encode(force_bytes(self.user.id))
+        token = default_token_generator.make_token(self.user)
+        password_reset_link = f"/api/password_confirm/{uidb64}/{token}/"
+        response = self.client.post(password_reset_link, self.valid_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.user.check_password("securePassword123!")
+
+    def test_password_confirmation_with_invalid_token(self):
+        uidb64 = urlsafe_base64_encode(force_bytes(self.user.id))
+        password_reset_link = f"/api/password_confirm/{uidb64}/invalid-token/"
+        response = self.client.post(password_reset_link, self.valid_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_password_confirmation_invalid_uid(self):
+        token = default_token_generator.make_token(self.user)
+        password_reset_link = f"/api/password_confirm/invalid-uid/{token}/"
+        response = self.client.post(password_reset_link, self.valid_data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_password_confirmation_password_mismatch(self):
+        data = {
+             "password": "securePassword123!",
+             "confirmed_password": "anotherPassword123!",
+         }
+        uidb64 = urlsafe_base64_encode(force_bytes(self.user.id))
+        token = default_token_generator.make_token(self.user)
+        password_reset_link = f"/api/password_confirm/{uidb64}/{token}/"
+        response = self.client.post(password_reset_link, data, format="json")
+ 
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+         
+
+    def test_password_reset_invalid_fields(self):
+        data = {
+            "password": "invalid-pass",
+            "confirmed_password": "invalid-pass",
+        }
+        uidb64 = urlsafe_base64_encode(force_bytes(self.user.id))
+        token = default_token_generator.make_token(self.user)
+        password_reset_link = f"/api/password_confirm/{uidb64}/{token}/"
+        response = self.client.post(password_reset_link, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+
+    def test_password_reset_missing_fields(self):
+
+        for key in self.valid_data:
+            new_data = self.valid_data.copy()
+            new_data.pop(key)
+            uidb64 = urlsafe_base64_encode(force_bytes(self.user.id))
+            token = default_token_generator.make_token(self.user)
+            password_reset_link = f"/api/password_confirm/{uidb64}/{token}/"
+            response = self.client.post(password_reset_link, new_data, format="json")
+
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        
+

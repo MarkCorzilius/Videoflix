@@ -36,3 +36,12 @@ class LoginSerializer(TokenObtainPairSerializer):
         data["username"] = self.user.username
         
         return data
+
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    pass
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    pass

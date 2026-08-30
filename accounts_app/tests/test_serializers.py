@@ -1,8 +1,6 @@
-from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APITestCase
 from accounts_app.models import User
-from accounts_app.api.serializers import RegisterSerializer, LoginSerializer
+from accounts_app.api.serializers import RegisterSerializer, LoginSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 from rest_framework.exceptions import AuthenticationFailed
 
 class RegisterSerializerTests(APITestCase):
@@ -149,3 +147,85 @@ class LoginSerializerTests(APITestCase):
         serializer = LoginSerializer(data={})
 
         self.assertFalse(serializer.is_valid())
+
+
+class PasswordResetRequestSerializerTests(APITestCase):
+    def setUp(self):
+        self.valid_email = "valid@gmail.com"
+        self.user = User.objects.create_user(email=self.valid_email, password="secureTest123!", is_active=True)
+        self.valid_data = { "email": self.valid_email }
+
+    def test_valid_email_request(self):
+        serializer = PasswordResetRequestSerializer(data=self.valid_data)
+
+        self.assertTrue(serializer.is_valid())
+
+    def test_invalid_email_request(self):
+        data = {"email": "invalid-email"}
+        serializer = PasswordResetRequestSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("email", serializer.errors)
+
+    def test_missing_email(self):
+        data = {}
+        serializer = PasswordResetRequestSerializer(data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("email", serializer.errors)
+
+
+
+class PasswordResetConfirmSerializerTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="test@gmail.com", password="secureTest123!", is_active=True)        
+
+    def test_valid_passwords(self):
+        data = {
+            "password": "securePassword123!",
+            "confirmed_password": "securePassword123!",
+        }
+        serializer = PasswordResetConfirmSerializer(data)
+
+        self.assertTrue(serializer.is_valid())
+
+    def test_passwords_do_not_match(self):
+        data = {
+            "password": "securePassword123!",
+            "confirmed_password": "ANOTHERSecurePassword123!",
+        }
+        serializer = PasswordResetConfirmSerializer(data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("confirmed_password", serializer.errors)
+
+    def test_invalid_password(self):
+        data = {
+            "password": "invalidpass",
+            "confirmed_password": "invalidpass",
+        }
+        serializer = PasswordResetConfirmSerializer(data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("password", serializer.errors)
+
+    def test_missing_password(self):
+        data = {
+            "password": "",
+            "confirmed_password": "securePassword123!",
+        }
+        serializer = PasswordResetConfirmSerializer(data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("password", serializer.errors)
+
+    def test_missing_confirm_password(self):
+        data = {
+            "password": "securePassword123!",
+            "confirmed_password": "",
+        }
+        serializer = PasswordResetConfirmSerializer(data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("confirmed_password", serializer.errors)
+
