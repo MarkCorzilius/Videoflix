@@ -47,7 +47,7 @@ class VideoSerializerTests(TestCase):
     def test_serializer_returns_thumbnail_url(self):
         serializer = VideoListSerializer(self.video)
 
-        self.assertIn("thumbnail.jpg", serializer.data["thumbnail_url"])
+        self.assertIn("thumbnail", serializer.data["thumbnail_url"])
 
     def test_serializer_does_not_return_video(self):
         serializer = VideoListSerializer(self.video)

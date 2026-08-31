@@ -9,7 +9,4 @@ class Video(models.Model):
     category = models.CharField(max_length=100)
 
 
-# 1: tests for VideoListViewTests
-# 2: VideoListSerializer
-# 3: VideoListView
 # 4: task and service for deletions (deleting files –> signal)

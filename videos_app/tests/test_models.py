@@ -1,7 +1,7 @@
 from django.test import TestCase
 from videos_app.models import Video
 from django.core.files.uploadedfile import SimpleUploadedFile
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 class VideoModelTests(TestCase):
     def setUp(self):

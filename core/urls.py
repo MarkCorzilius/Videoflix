@@ -21,5 +21,6 @@ from debug_toolbar.toolbar import debug_toolbar_urls
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('django-rq/', include('django_rq.urls')),
-    path('api/', include('accounts_app.api.urls'))
+    path('api/', include('accounts_app.api.urls')),
+    path('api/', include('videos_app.api.urls')),
 ] + debug_toolbar_urls()
