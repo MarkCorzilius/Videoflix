@@ -8,5 +8,5 @@ class Video(models.Model):
     video = models.FileField(upload_to="videos/originals/")
     category = models.CharField(max_length=100)
 
-
-# 4: task and service for deletions (deleting files –> signal)
+    def __str__(self):
+        return self.title
