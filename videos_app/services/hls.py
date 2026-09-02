@@ -1,6 +1,7 @@
 from videos_app.models import Video
 from pathlib import Path
 from django.conf import settings
+from django.core.files import File
 import subprocess
 
 
@@ -12,6 +13,14 @@ def generate_hls_files(video_id):
     convert_resolution(path, output_dir, 480)
     convert_resolution(path, output_dir, 720)
     convert_resolution(path, output_dir, 1080)
+
+    thumbnail_extension = getattr(settings, "THUMBNAIL_EXTENSION", "jpg")
+    thumbnail_filename = f"thumbnail.{thumbnail_extension}"
+    thumbnail_path = Path(settings.MEDIA_ROOT) / "video" / str(video_uuid) / thumbnail_filename
+    generate_thumbnail(path, thumbnail_path)
+
+    with open(thumbnail_path, "rb") as f:
+        video.thumbnail_url.save(thumbnail_filename, File(f), save=True)
 
 def convert_resolution(source, output_dir, resolution):
     resolution_dir = output_dir / f"{resolution}p"
@@ -31,3 +40,11 @@ def convert_resolution(source, output_dir, resolution):
         str(resolution_dir / "index.m3u8"),
     ]
     subprocess.run(cmd)
+
+
+def generate_thumbnail(source, output_path):
+    cmd = [
+        "ffmpeg", "-y", "-i", source, "-ss", "00:00:01",
+        "-vframes", "1", str(output_path),
+    ]
+    subprocess.run(cmd, check=True)
