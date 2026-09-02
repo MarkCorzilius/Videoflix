@@ -56,3 +56,8 @@ class VideoSegmentView(APIView):
             open(file_path, "rb"),
             content_type="application/vnd.apple.mpegurl"
         )
+
+
+# prevent videos being distorted.
+# remove video content on video deletion
+# docs, imports, logs

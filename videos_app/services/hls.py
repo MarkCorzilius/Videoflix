@@ -15,10 +15,18 @@ def generate_hls_files(video_id):
 def convert_resolution(source, output_dir, resolution):
     resolution_dir = output_dir / f"{resolution}p"
     resolution_dir.mkdir(parents=True, exist_ok=True)
+
+    width = int(resolution * 16 / 9)
+
     cmd = [
     "ffmpeg",
     "-i", source,
-    "-s", f"hd{resolution}",
+    "-vf",
+    (
+        f"scale=w={width}:h={resolution}:"
+        "force_original_aspect_ratio=decrease,"
+        f"pad={width}:{resolution}:(ow-iw)/2:(oh-ih)/2"
+    ),
     "-c:v", "libx264",
     "-crf", "23",
     "-c:a", "aac",
