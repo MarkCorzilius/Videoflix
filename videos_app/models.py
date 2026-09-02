@@ -5,6 +5,7 @@ from videos_app.utils import video_upload_path, thumbnail_upload_path
 class Video(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_processed = models.BooleanField(default=False)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=300)
     thumbnail_url = models.ImageField(upload_to=thumbnail_upload_path, blank=True)

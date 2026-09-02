@@ -22,6 +22,9 @@ def generate_hls_files(video_id):
     with open(thumbnail_path, "rb") as f:
         video.thumbnail_url.save(thumbnail_filename, File(f), save=True)
 
+    video.is_processed = True
+    video.save(update_fields=["thumbnail_url"])
+
 def convert_resolution(source, output_dir, resolution):
     resolution_dir = output_dir / f"{resolution}p"
     resolution_dir.mkdir(parents=True, exist_ok=True)
