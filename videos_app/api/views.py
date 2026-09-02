@@ -28,7 +28,29 @@ class m3u8View(APIView):
         )
 
         if not file_path.is_file():
-            raise Http404("Playlist not found")
+            raise Http404("Playlist not found.")
+
+        return FileResponse(
+            open(file_path, "rb"),
+            content_type="application/vnd.apple.mpegurl"
+        )
+
+class VideoSegmentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+
+    def get(self, request, movie_id, resolution, segment):
+        video = get_object_or_404(Video, id=movie_id)
+        file_path = (
+            Path(video.video.path).parent
+            / "hls"
+            / resolution
+            / segment
+        )
+
+        if not file_path.is_file():
+            raise Http404("Video segments not found.")
+
 
         return FileResponse(
             open(file_path, "rb"),
