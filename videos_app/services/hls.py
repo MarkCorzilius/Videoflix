@@ -1,13 +1,11 @@
 from videos_app.models import Video
 from pathlib import Path
-from django.conf import settings
 import subprocess
 
 def generate_hls_files(video_id):
     video = Video.objects.get(id=video_id)
-    video_uuid = video.uuid
     path = video.video.path
-    output_dir = (Path(settings.MEDIA_ROOT) / "video" / str(video_uuid) / "hls")
+    output_dir = (Path(path).parent / "hls")
     convert_resolution(path, output_dir, 480)
     convert_resolution(path, output_dir, 720)
     convert_resolution(path, output_dir, 1080)
