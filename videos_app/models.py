@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from videos_app.utils import video_upload_path, thumbnail_upload_path
+
 class Video(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
