@@ -1,11 +1,12 @@
-from rest_framework.generics import ListAPIView
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from videos_app.api.serializers import VideoListSerializer
 from pathlib import Path
+
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
+from videos_app.api.serializers import VideoListSerializer
 from videos_app.models import Video
 
 
@@ -19,6 +20,8 @@ class m3u8View(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, movie_id, resolution):
+        """Return the HLS playlist file for the given video and resolution."""
+
         video = get_object_or_404(Video, id=movie_id)
         file_path = (
             Path(video.video.path).parent
@@ -35,10 +38,13 @@ class m3u8View(APIView):
             content_type="application/vnd.apple.mpegurl"
         )
 
+
 class VideoSegmentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, movie_id, resolution, segment):
+        """Return a single HLS video segment for the given video and resolution."""
+
         video = get_object_or_404(Video, id=movie_id)
         file_path = (
             Path(video.video.path).parent
