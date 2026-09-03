@@ -15,4 +15,6 @@ class Video(models.Model):
     category = models.CharField(max_length=100)
 
     def __str__(self):
+        """Return the video title as its string representation."""
+
         return self.title

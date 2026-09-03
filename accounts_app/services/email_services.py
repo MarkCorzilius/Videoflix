@@ -1,10 +1,12 @@
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 
 def send_verification_email(user, token):
+    """Send an account activation email containing the verification link."""
+
     uid = urlsafe_base64_encode(force_bytes(user.id))
     activation_link = f"/api/activate/{uid}/{token}/"
 
@@ -32,6 +34,8 @@ def send_verification_email(user, token):
 
 
 def send_password_reset_service(user, token):
+    """Send a password reset email containing the reset link."""
+
     uidb64 = urlsafe_base64_encode(force_bytes(user.id))
     reset_url = f"/api/password_confirm/{uidb64}/{token}/"
 

@@ -4,6 +4,8 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
+        """Create and save a regular user with the given email and password."""
+
         email = self.normalize_email(email)
         extra_fields.setdefault("username", email)
         user = self.model(email=email, **extra_fields)
@@ -12,6 +14,8 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        """Create and save a superuser with the given email and password."""
+
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
