@@ -14,17 +14,6 @@ def generate_hls_files(video_id):
     convert_resolution(path, output_dir, 720)
     convert_resolution(path, output_dir, 1080)
 
-    extension = Path(video.thumbnail_url.name).suffix
-    thumbnail_filename = f"thumbnail.{extension}"
-    thumbnail_path = Path(settings.MEDIA_ROOT) / "video" / str(video_uuid) / thumbnail_filename
-    generate_thumbnail(path, thumbnail_path)
-
-    if video.thumbnail_url:
-        video.thumbnail_url.delete(save=False)
-
-    with open(thumbnail_path, "rb") as f:
-        video.thumbnail_url.save(thumbnail_filename, File(f), save=True)
-
     video.is_processed = True
     video.save(update_fields=["is_processed"])
 
@@ -53,4 +42,4 @@ def generate_thumbnail(source, output_path):
         "ffmpeg", "-y", "-i", source, "-ss", "00:00:01",
         "-vframes", "1", str(output_path),
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd)

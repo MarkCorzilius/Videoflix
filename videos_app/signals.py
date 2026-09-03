@@ -1,17 +1,20 @@
+from videos_app.models import Video
 from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 import django_rq
-from videos_app.tasks import generate_hls
+from videos_app.tasks import generate_hls, generate_thumbnail_for_video
 from pathlib import Path
-from django.db import transaction
 from django.conf import settings
 import shutil
 
-from videos_app.models import Video
 
 @receiver(post_save, sender=Video)
 def video_saved(sender, instance, created, **kwargs):
-    if created or getattr(instance, "video_changed", False):
+    if created:
+        django_rq.enqueue(generate_hls, instance.id)
+        django_rq.enqueue(generate_thumbnail_for_video, instance.id)
+
+    elif getattr(instance, "video_changed", False):
         django_rq.enqueue(generate_hls, instance.id)
 
 @receiver(pre_save, sender=Video)
@@ -30,6 +33,7 @@ def video_updated(sender, instance, **kwargs):
             shutil.rmtree(hls_dir)
 
         instance.video_changed = True
+        instance.is_processed = False
 
     if old_instance.thumbnail_url != instance.thumbnail_url:
         Path(old_instance.thumbnail_url.path).unlink()

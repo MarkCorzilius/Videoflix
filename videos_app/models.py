@@ -10,7 +10,7 @@ class Video(models.Model):
     is_processed = models.BooleanField(default=False)
     title = models.CharField(max_length=100)
     description = models.TextField(max_length=300)
-    thumbnail_url = models.ImageField(upload_to=thumbnail_upload_path, blank=True, validators=[validate_thumbnail_file_extension])
+    thumbnail_url = models.ImageField(upload_to=thumbnail_upload_path, validators=[validate_thumbnail_file_extension])
     video = models.FileField(upload_to=video_upload_path, validators=[validate_video_file_extension])
     category = models.CharField(max_length=100)
 
