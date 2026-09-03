@@ -9,6 +9,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
 
   redis:
     image: redis:latest
@@ -25,7 +27,7 @@ services:
 
     volumes:
       - .:/app
-      - videoflix_media:/app/media
+      - ./media:/app/media
       - videoflix_static:/app/static
     ports:
       - "8000:8000"
