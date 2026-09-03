@@ -216,8 +216,14 @@ STORAGES = {
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", default="http://127.0.0.1:5500,http://localhost:5500").split(",")
 CORS_ALLOW_CREDENTIALS = True
 
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_URL", default="videoflix@mail.com")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", default="http://localhost:5500")
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+BACKEND_URL = os.environ.get("BACKEND_URL", default="http://localhost:8000")
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", default=587))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24
