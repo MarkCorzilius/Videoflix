@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 
 class PasswordStrengthValidator:
     def validate(self, password, user=None):
+        """Validate password strength rules and raise ValidationError if any fail."""
+
         errors = []
 
         if any(char.isspace() for char in password):
@@ -29,6 +31,8 @@ class PasswordStrengthValidator:
             raise ValidationError(errors)
 
     def get_help_text(self):
+        """Return a human-readable description of the password requirements."""
+
         return (
             "Password must contain uppercase and lowercase letters, "
             "a number, and a special character."

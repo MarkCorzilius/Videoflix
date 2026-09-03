@@ -1,11 +1,14 @@
-from videos_app.models import Video
-from pathlib import Path
-from django.conf import settings
-from django.core.files import File
 import subprocess
+from pathlib import Path
+
+from django.conf import settings
+
+from videos_app.models import Video
 
 
 def generate_hls_files(video_id):
+    """Generate HLS renditions (480p, 720p, 1080p) for the given video and mark it as processed."""
+
     video = Video.objects.get(id=video_id)
     video_uuid = video.uuid
     path = video.video.path
@@ -17,7 +20,10 @@ def generate_hls_files(video_id):
     video.is_processed = True
     video.save(update_fields=["is_processed"])
 
+
 def convert_resolution(source, output_dir, resolution):
+    """Convert the source video into an HLS stream at the given resolution."""
+
     resolution_dir = output_dir / f"{resolution}p"
     resolution_dir.mkdir(parents=True, exist_ok=True)
 
@@ -38,6 +44,8 @@ def convert_resolution(source, output_dir, resolution):
 
 
 def generate_thumbnail(source, output_path):
+    """Extract a single frame from the source video and save it as a thumbnail."""
+
     cmd = [
         "ffmpeg", "-y", "-i", source, "-ss", "00:00:01",
         "-vframes", "1", str(output_path),
