@@ -31,42 +31,6 @@ Copy the environment template and fill in your own values (DB, Redis, superuser,
 cp .env.template .env
 ```
 
-Create a virtual environment (macOS/Linux).
-
-```bash
-python3 -m venv venv
-```
-
-Create a virtual environment (Windows).
-
-```powershell
-python -m venv venv
-```
-
-Activate the virtual environment (macOS/Linux).
-
-```bash
-source venv/bin/activate
-```
-
-Activate the virtual environment (Windows).
-
-```powershell
-venv\Scripts\activate
-```
-
-Install the project dependencies from `requirements.txt`.
-
-```bash
-pip install -r requirements.txt
-```
-
-After adding/updating a package, freeze the dependencies back into `requirements.txt`.
-
-```bash
-pip freeze > requirements.txt
-```
-
 Build and start all services (Django, PostgreSQL, Redis) with Docker Compose.
 
 ```bash
