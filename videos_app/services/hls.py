@@ -14,16 +14,19 @@ def generate_hls_files(video_id):
     convert_resolution(path, output_dir, 720)
     convert_resolution(path, output_dir, 1080)
 
-    thumbnail_extension = getattr(settings, "THUMBNAIL_EXTENSION", "jpg")
-    thumbnail_filename = f"thumbnail.{thumbnail_extension}"
+    extension = Path(video.thumbnail_url.name).suffix
+    thumbnail_filename = f"thumbnail.{extension}"
     thumbnail_path = Path(settings.MEDIA_ROOT) / "video" / str(video_uuid) / thumbnail_filename
     generate_thumbnail(path, thumbnail_path)
+
+    if video.thumbnail_url:
+        video.thumbnail_url.delete(save=False)
 
     with open(thumbnail_path, "rb") as f:
         video.thumbnail_url.save(thumbnail_filename, File(f), save=True)
 
     video.is_processed = True
-    video.save(update_fields=["thumbnail_url"])
+    video.save(update_fields=["is_processed"])
 
 def convert_resolution(source, output_dir, resolution):
     resolution_dir = output_dir / f"{resolution}p"

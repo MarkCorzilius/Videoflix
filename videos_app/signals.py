@@ -37,7 +37,7 @@ def video_updated(sender, instance, **kwargs):
 @receiver(post_delete, sender=Video)
 def video_deleted(sender, instance, using, origin, **kwargs):
     media_video_dir = Path(settings.MEDIA_ROOT) / "video"
-    video_dir = media_video_dir / str(instance.id)
+    video_dir = media_video_dir / str(instance.uuid)
 
     if media_video_dir.is_dir() and video_dir.parent == media_video_dir:
         shutil.rmtree(video_dir)

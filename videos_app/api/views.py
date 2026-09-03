@@ -10,7 +10,7 @@ from videos_app.models import Video
 
 
 class VideoListView(ListAPIView):
-    queryset = Video.objects.all()
+    queryset = Video.objects.filter(is_processed=True)
     permission_classes = [IsAuthenticated]
     serializer_class = VideoListSerializer
 
@@ -38,7 +38,6 @@ class m3u8View(APIView):
 class VideoSegmentView(APIView):
     permission_classes = [IsAuthenticated]
 
-
     def get(self, request, movie_id, resolution, segment):
         video = get_object_or_404(Video, id=movie_id)
         file_path = (
@@ -51,13 +50,7 @@ class VideoSegmentView(APIView):
         if not file_path.is_file():
             raise Http404("Video segments not found.")
 
-
         return FileResponse(
             open(file_path, "rb"),
             content_type="application/vnd.apple.mpegurl"
         )
-
-
-# prevent videos being distorted.
-# remove video content on video deletion
-# docs, imports, logs
