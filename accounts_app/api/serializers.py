@@ -52,10 +52,10 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True)
-    confirmed_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(source="password", write_only=True)
+    confirm_password = serializers.CharField(source="confirmed_password", write_only=True)
 
-    def validate_password(self, value):
+    def validate_new_password(self, value):
         """Validate the password against Django's password strength rules."""
 
         validate_password(value)
@@ -65,5 +65,5 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         """Ensure the password and confirmation match."""
 
         if attrs["password"] != attrs["confirmed_password"]:
-            raise serializers.ValidationError({"confirmed_password": "Passwords do not match."})
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
         return attrs
