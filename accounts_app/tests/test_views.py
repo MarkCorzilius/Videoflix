@@ -408,8 +408,8 @@ class PasswordResetConfirmViewTests(APITestCase):
         self.user = User.objects.create_user(email="test@gmail.com", password=self.old_password, is_active=True)
 
         self.valid_data = {
-            "password": "securePassword123!",
-            "confirmed_password": "securePassword123!",
+            "new_password": "securePassword123!",
+            "confirm_password": "securePassword123!",
         }
 
     def test_valid_reset_confirmation(self):
